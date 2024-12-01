@@ -1,0 +1,6 @@
+@ComputerRepairs_HostAddress = http://localhost:5027
+
+GET {{ComputerRepairs_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
