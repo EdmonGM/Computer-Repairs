@@ -4,6 +4,7 @@ using ComputerRepairs.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ComputerRepairs.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20241202204007_TryingToReplaceUserId")]
+    partial class TryingToReplaceUserId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -265,11 +268,11 @@ namespace ComputerRepairs.Migrations
 
             modelBuilder.Entity("ComputerRepairs.Models.Ticket", b =>
                 {
-                    b.HasOne("ComputerRepairs.Models.AppUser", "AppUser")
+                    b.HasOne("ComputerRepairs.Models.AppUser", "User")
                         .WithMany("Tickets")
                         .HasForeignKey("UserId");
 
-                    b.Navigation("AppUser");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

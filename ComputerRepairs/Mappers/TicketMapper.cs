@@ -18,14 +18,16 @@ namespace ComputerRepairs.Mappers
                 IsCompleted = ticketModel.IsCompleted,
             };
         }
-        public static Ticket ToTicketFromCreateTicketDto(this CreateTicketDto ticketDto, int userId)
+        public static Ticket ToTicketFromCreateTicketDto(this CreateTicketDto ticketDto, string userId)
         {
             return new Ticket
             {
-                UserId = userId,
                 Title = ticketDto.Title,
                 Description = ticketDto.Description,
                 IsCompleted = ticketDto.IsCompleted,
+                CreatedDate = DateTime.Now,
+                UpdatedDate = DateTime.Now,
+                UserId = userId,
             };
         }
     }

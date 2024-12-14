@@ -5,7 +5,8 @@ namespace ComputerRepairs.Models
     public class Ticket
     {
         public int Id { get; set; }
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
+        public AppUser? AppUser { get; set; }
         [Required]
         [MinLength(5)]
         [MaxLength(50)]
