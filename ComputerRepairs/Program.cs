@@ -3,6 +3,7 @@ using ComputerRepairs.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
@@ -41,9 +42,18 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
 });
 
+var allowedOrigin = "Frontend";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: allowedOrigin, policy =>
+    {
+        policy.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowCredentials().AllowAnyHeader();
+    });
+});
+
 var config = builder.Configuration;
 var connectionString = config.GetConnectionString("DefaultConnection");
-
 builder.Services.AddDbContext<AppDBContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
@@ -70,7 +80,7 @@ builder.Services.AddAuthentication(x =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
-        ValidateIssuerSigningKey = true
+        ValidateIssuerSigningKey = true,
     };
 });
 builder.Services.AddAuthorization();
@@ -85,6 +95,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(allowedOrigin);
 
 app.UseAuthentication();
 app.UseAuthorization();
