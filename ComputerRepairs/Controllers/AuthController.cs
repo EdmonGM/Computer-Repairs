@@ -52,9 +52,9 @@ namespace ComputerRepairs.Controllers
 
             var claims = new List<Claim>
             {
-                new(ClaimTypes.NameIdentifier, user.Id),
-                new(ClaimTypes.Name, user.UserName),
-                new(ClaimTypes.Email, user.Email),
+                new("id", user.Id),
+                new("username", user.UserName),
+                new("email", user.Email),
             };
 
             var token = new JwtSecurityToken(_config["JwtSettings:Issuer"], _config["JwtSettings:Audience"], claims, expires: DateTime.Now.AddMinutes(3), signingCredentials: creds);
