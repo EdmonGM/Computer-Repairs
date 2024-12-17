@@ -55,7 +55,7 @@ namespace ComputerRepairs.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateTicket([FromRoute] int id, [FromBody] TicketDto ticketDto)
+        public async Task<IActionResult> UpdateTicket([FromRoute] int id, [FromBody] CreateTicketDto ticketDto)
         {
             var ticket = await _context.Tickets.FirstOrDefaultAsync(x => x.Id == id);
             if (ticket == null)
@@ -87,7 +87,7 @@ namespace ComputerRepairs.Controllers
 
         private AppUser GetCurrentUser()
         {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            ClaimsIdentity? identity = HttpContext.User.Identity as ClaimsIdentity;
 
             if (identity == null) return null;
 
@@ -95,9 +95,9 @@ namespace ComputerRepairs.Controllers
 
             return new AppUser
             {
-                Id = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-                UserName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value,
-                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
+                Id = claims.FirstOrDefault(c => c.Type == "id")?.Value,
+                UserName = claims.FirstOrDefault(c => c.Type == "username")?.Value,
+                Email = claims.FirstOrDefault(c => c.Type == "email")?.Value,
             };
         }
     }
