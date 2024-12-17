@@ -41,8 +41,16 @@ namespace ComputerRepairs.Controllers
             }
 
             var token = GenerateToken(user);
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.Now.AddMinutes(3)
+            };
+            Response.Cookies.Append("access", token, cookieOptions);
 
-            return Ok(token);
+            return Ok(Response.Cookies);
         }
 
         private string GenerateToken(AppUser user)
