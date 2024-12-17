@@ -53,7 +53,7 @@ namespace ComputerRepairs.Controllers
                 return Unauthorized();
             }
             var tickets = await _dbContext.Tickets.Where(t => t.UserId == user.Id).ToListAsync();
-            return Ok(tickets);
+            return Ok(tickets.Select(t => t.ToTicketDto()));
         }
 
         [HttpGet]
@@ -80,9 +80,9 @@ namespace ComputerRepairs.Controllers
 #pragma warning disable CS8601 // Possible null reference assignment.
             return new AppUser
             {
-                Id = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-                UserName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value,
-                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
+                Id = claims.FirstOrDefault(c => c.Type == "id")?.Value,
+                UserName = claims.FirstOrDefault(c => c.Type == "username")?.Value,
+                Email = claims.FirstOrDefault(c => c.Type == "email")?.Value,
             };
 #pragma warning restore CS8601 // Possible null reference assignment.
         }
