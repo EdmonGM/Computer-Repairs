@@ -1,14 +1,11 @@
 ﻿using ComputerRepairs.Data;
 using ComputerRepairs.DTOs.Account;
-using ComputerRepairs.DTOs.AppUser;
 using ComputerRepairs.Mappers;
 using ComputerRepairs.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace ComputerRepairs.Controllers
@@ -48,7 +45,6 @@ namespace ComputerRepairs.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserTickets()
         {
-            await Console.Out.WriteLineAsync("Enter");
             var user = GetCurrentUser();
             if (user == null)
             {
@@ -75,9 +71,7 @@ namespace ComputerRepairs.Controllers
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
 
-            Console.WriteLine("b4 identity");
             if (identity == null) return null;
-            Console.WriteLine("Identity not null");
             
             var claims = identity.Claims;
 
