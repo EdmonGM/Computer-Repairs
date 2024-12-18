@@ -95,9 +95,9 @@ namespace ComputerRepairs.Controllers
 
             return new AppUser
             {
-                Id = claims.FirstOrDefault(c => c.Type == "id")?.Value,
-                UserName = claims.FirstOrDefault(c => c.Type == "username")?.Value,
-                Email = claims.FirstOrDefault(c => c.Type == "email")?.Value,
+                Id = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
+                UserName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value,
+                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
             };
         }
     }

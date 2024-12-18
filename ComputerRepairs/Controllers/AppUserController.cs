@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace ComputerRepairs.Controllers
@@ -47,6 +48,7 @@ namespace ComputerRepairs.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserTickets()
         {
+            await Console.Out.WriteLineAsync("Enter");
             var user = GetCurrentUser();
             if (user == null)
             {
@@ -73,18 +75,18 @@ namespace ComputerRepairs.Controllers
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
 
+            Console.WriteLine("b4 identity");
             if (identity == null) return null;
-
+            Console.WriteLine("Identity not null");
+            
             var claims = identity.Claims;
 
-#pragma warning disable CS8601 // Possible null reference assignment.
             return new AppUser
             {
-                Id = claims.FirstOrDefault(c => c.Type == "id")?.Value,
-                UserName = claims.FirstOrDefault(c => c.Type == "username")?.Value,
-                Email = claims.FirstOrDefault(c => c.Type == "email")?.Value,
+                Id = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
+                UserName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value,
+                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
             };
-#pragma warning restore CS8601 // Possible null reference assignment.
         }
 
     }
