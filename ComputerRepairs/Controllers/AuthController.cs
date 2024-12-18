@@ -5,22 +5,34 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace ComputerRepairs.Controllers
 {
     [Route("api/auth")]
     [ApiController]
-    public class AuthController(IConfiguration config, UserManager<AppUser> userManager) : ControllerBase
+    public class AuthController(IConfiguration config, UserManager<AppUser> userManager, TokenGenerator tokenGenerator, AppDBContext dbContext) : ControllerBase
     {
         private readonly IConfiguration _config = config;
         private readonly UserManager<AppUser> _userManager = userManager;
+        private readonly TokenGenerator _tokenGenerator = tokenGenerator;
+        private readonly AppDBContext _dbContext = dbContext;
 
-        [AllowAnonymous]
-        [HttpPost("Login")]
+        private readonly CookieOptions accessCookieOptions = new()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.Now.AddMinutes(3)
+        };
+
+    [AllowAnonymous]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             if (!ModelState.IsValid)
@@ -40,34 +52,49 @@ namespace ComputerRepairs.Controllers
                 return BadRequest("Incorrect Password");
             }
 
-            var token = GenerateToken(user);
-            var cookieOptions = new CookieOptions
+            var accessToken = _tokenGenerator.GenerateAccessToken(user);
+            Response.Cookies.Append("access", accessToken, accessCookieOptions);
+
+            var refreshToken = _tokenGenerator.GenerateRefreshToken(user);
+            var refreshCookieOptions = new CookieOptions
             {
-                HttpOnly = false,
+                HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                Expires = DateTime.Now.AddMinutes(3)
+                Expires = DateTime.Now.AddDays(7),
             };
-            Response.Cookies.Append("access", token, cookieOptions);
+            Response.Cookies.Append("refresh", refreshToken, refreshCookieOptions);
 
-            return Ok(Response.Cookies);
+            return Ok();
         }
-
-        private string GenerateToken(AppUser user)
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Key"]));
-            var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new List<Claim>
+            var refreshToken = Request.Cookies.FirstOrDefault(t => t.Key == "refresh").Value;
+            if(refreshToken == null)
             {
-                new("id", user.Id),
-                new("username", user.UserName),
-                new("email", user.Email),
-            };
+                return Unauthorized("No refresh token found");
+            }
+            var principal = _tokenGenerator.GetPrincipalFromRefreshCookie(refreshToken);
+            foreach (var item in principal.Claims.Select(c => c))
+            {
+                await Console.Out.WriteLineAsync(item.Type);
+            }
+            var userId = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            if (userId == null)
+            {
+                return BadRequest("UserId not found");
+            }
+            var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+            var newAccessToken = _tokenGenerator.GenerateAccessToken(user);
+            Response.Cookies.Append("access", newAccessToken, accessCookieOptions);
 
-            var token = new JwtSecurityToken(_config["JwtSettings:Issuer"], _config["JwtSettings:Audience"], claims, expires: DateTime.Now.AddMinutes(3), signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Ok();
         }
     }
 }
