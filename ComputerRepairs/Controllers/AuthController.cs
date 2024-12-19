@@ -74,7 +74,7 @@ namespace ComputerRepairs.Controllers
             var refreshToken = Request.Cookies.FirstOrDefault(t => t.Key == "refresh").Value;
             if(refreshToken == null)
             {
-                return Unauthorized("No refresh token found");
+                return BadRequest("No refresh token found");
             }
             var principal = _tokenGenerator.GetPrincipalFromRefreshCookie(refreshToken);
             foreach (var item in principal.Claims.Select(c => c))
@@ -84,7 +84,7 @@ namespace ComputerRepairs.Controllers
             var userId = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             if (userId == null)
             {
-                return BadRequest("UserId not found");
+                return NotFound("UserId not found");
             }
             var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (user == null)
