@@ -1,9 +1,7 @@
 ﻿using ComputerRepairs.Data;
 using ComputerRepairs.DTOs.Ticket;
 using ComputerRepairs.Mappers;
-using ComputerRepairs.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -15,10 +13,9 @@ namespace ComputerRepairs.Controllers
     [Route("api/ticket")]
     [ApiController]
     [Authorize]
-    public class TicketController(AppDBContext context, UserManager<AppUser> userManager) : ControllerBase
+    public class TicketController(AppDBContext context) : ControllerBase
     {
         private readonly AppDBContext _context = context;
-        private readonly UserManager<AppUser> _userManager = userManager;
 
         // GET: api/<TicketController>
         [HttpGet]
@@ -42,13 +39,13 @@ namespace ComputerRepairs.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTicket([FromBody] CreateTicketDto ticketDto)
         {
-            var user = GetCurrentUser();
+            string? userId = GetCurrentUserId();
 
-            if (user == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized();
             }
-            var ticketModel = ticketDto.ToTicketFromCreateTicketDto(user.Id);
+            var ticketModel = ticketDto.ToTicketFromCreateTicketDto(userId);
             await _context.AddAsync(ticketModel);
             await _context.SaveChangesAsync();
             return Ok();
@@ -85,20 +82,15 @@ namespace ComputerRepairs.Controllers
             return NoContent();
         }
 
-        private AppUser GetCurrentUser()
+        private string? GetCurrentUserId()
         {
-            ClaimsIdentity? identity = HttpContext.User.Identity as ClaimsIdentity;
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
 
             if (identity == null) return null;
 
             var claims = identity.Claims;
 
-            return new AppUser
-            {
-                Id = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-                UserName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value,
-                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
-            };
+            return claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         }
     }
 }
