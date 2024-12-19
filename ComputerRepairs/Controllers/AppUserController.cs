@@ -45,18 +45,18 @@ namespace ComputerRepairs.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserTickets()
         {
-            var user = GetCurrentUser();
-            if (user == null)
+            string? userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return Unauthorized();
             }
-            var tickets = await _dbContext.Tickets.Where(t => t.UserId == user.Id).ToListAsync();
+            var tickets = await _dbContext.Tickets.Where(t => t.UserId == userId).ToListAsync();
             return Ok(tickets.Select(t => t.ToTicketDto()));
         }
 
         [HttpGet]
-        //[Authorize]
-        public async Task<IActionResult> GetUser(string userId)
+        [Authorize]
+        public async Task<IActionResult> GetUserById(string userId)
         {
             //var user = await _dbContext.Users.Include(t => t.Tickets).FirstOrDefaultAsync(u => u.Id ==  userId);
             var user = await _dbContext.Users.Include(t => t.Tickets).FirstOrDefaultAsync(u => u.Id == userId);
@@ -66,8 +66,24 @@ namespace ComputerRepairs.Controllers
             }
             return Ok(user.ToAppUserDto());
         }
+        [HttpGet("current")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            string? userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+            var user = await _dbContext.Users.Include(t => t.Tickets).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound("No user found with the given ID");
+            }
+            return Ok(user.ToAppUserDto());
+        }
 
-        private AppUser? GetCurrentUser()
+        private string? GetCurrentUserId()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
 
@@ -75,12 +91,7 @@ namespace ComputerRepairs.Controllers
             
             var claims = identity.Claims;
 
-            return new AppUser
-            {
-                Id = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-                UserName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value,
-                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
-            };
+            return claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         }
 
     }
