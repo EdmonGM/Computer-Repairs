@@ -47,6 +47,8 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
 });
 
+builder.Services.AddSingleton<JwtOptions>();
+
 var allowedOrigin = "Frontend";
 
 builder.Services.AddCors(options =>
@@ -58,6 +60,7 @@ builder.Services.AddCors(options =>
 });
 
 var config = builder.Configuration;
+
 var connectionString = config.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDBContext>(options => options.UseSqlServer(connectionString));
 
@@ -74,6 +77,8 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
+var jwtOptions = config.GetSection("Jwt").Get<JwtOptions>();
+
 builder.Services.AddAuthentication(x =>
 {
     x.DefaultAuthenticateScheme =
@@ -84,9 +89,9 @@ builder.Services.AddAuthentication(x =>
 {
     x.TokenValidationParameters = new TokenValidationParameters
     {
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:Key"] ?? throw new InvalidOperationException("JWT Key is missing in config file"))),
-        ValidIssuer = config["JwtSettings:Issuer"],
-        ValidAudience = config["JwtSettings:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions?.SigningKey ?? throw new InvalidOperationException("JWT Key is missing in config file"))),
+        ValidIssuer = jwtOptions?.Issuer,
+        ValidAudience = jwtOptions?.Audience,
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
@@ -95,7 +100,7 @@ builder.Services.AddAuthentication(x =>
 });
 builder.Services.AddAuthorization();
 
-builder.Services.AddSingleton<TokenGenerator>();
+builder.Services.AddScoped<TokenGenerator>();
 
 var app = builder.Build();
 
@@ -126,11 +131,25 @@ app.Use(async (context, next) =>
     await next(context);
 });
 app.UseMiddleware<TimeLoggerMiddleware>();
-app.UseMiddleware<RateLimitingMiddleware>();
+//app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using(var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    string[] roles = ["Employee", "Admin"];
+
+    foreach (string role in roles)
+    {
+        if(!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+}
 
 app.Run();
