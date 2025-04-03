@@ -24,7 +24,7 @@ namespace ComputerRepairs.Controllers
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.None,
-            Expires = DateTime.Now.AddMinutes(3)
+            Expires = DateTime.Now.AddMinutes(30)
         };
 
         [AllowAnonymous]
@@ -44,10 +44,10 @@ namespace ComputerRepairs.Controllers
                 return BadRequest("Incorrect Password");
             }
 
-            var accessToken = _tokenGenerator.GenerateAccessToken(user);
+            var accessToken = await _tokenGenerator.GenerateAccessToken(user);
             Response.Cookies.Append("access", accessToken, accessCookieOptions);
 
-            var refreshToken = _tokenGenerator.GenerateRefreshToken(user);
+            var refreshToken = await _tokenGenerator.GenerateRefreshToken(user);
             var refreshCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -70,6 +70,11 @@ namespace ComputerRepairs.Controllers
                 return BadRequest("No refresh token found");
             }
             var principal = _tokenGenerator.GetPrincipalFromRefreshCookie(refreshToken);
+            if (principal == null)
+            {
+                Log.Information("User refresh token is invalid");
+                return BadRequest("Invalid refresh token");
+            }
             var userId = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             var username = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.UniqueName)?.Value;
 
@@ -87,9 +92,8 @@ namespace ComputerRepairs.Controllers
                 return NotFound("User not found");
             }
 
-            var newAccessToken = _tokenGenerator.GenerateAccessToken(user);
+            var newAccessToken = await _tokenGenerator.GenerateAccessToken(user);
             Response.Cookies.Append("access", newAccessToken, accessCookieOptions);
-            Log.Information("{username} successfully refreshed their token", username);
 
             return Ok();
         }
