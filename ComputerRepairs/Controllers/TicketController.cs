@@ -4,13 +4,14 @@ using ComputerRepairs.Mappers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace ComputerRepairs.Controllers
 {
-    [Route("api/ticket")]
+    [Route("api/tickets")]
     [ApiController]
     [Authorize]
     public class TicketController(AppDBContext context) : ControllerBase
@@ -19,6 +20,7 @@ namespace ComputerRepairs.Controllers
 
         // GET: api/<TicketController>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllTickets()
         {
             var tickets = await _context.Tickets.Select(t => t.ToTicketDto()).ToListAsync();
@@ -39,7 +41,7 @@ namespace ComputerRepairs.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTicket([FromBody] CreateTicketDto ticketDto)
         {
-            string? userId = GetCurrentUserId();
+            string? userId = ((ClaimsIdentity)User.Identity!).FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -69,6 +71,7 @@ namespace ComputerRepairs.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteTicket([FromRoute] int id)
         {
             var ticket = await _context.Tickets.FirstOrDefaultAsync(x => x.Id == id);
@@ -80,17 +83,6 @@ namespace ComputerRepairs.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private string? GetCurrentUserId()
-        {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-
-            if (identity == null) return null;
-
-            var claims = identity.Claims;
-
-            return claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         }
     }
 }
