@@ -37,7 +37,7 @@ namespace ComputerRepairs.Controllers
             return Ok(usersDtos);
         }
 
-        [HttpPost("sign-up")]
+        [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] RegisterDto registerDto)
         {
@@ -52,6 +52,8 @@ namespace ComputerRepairs.Controllers
                 {
                     UserName = registerDto.Username,
                     Email = registerDto.Email,
+                    Name = registerDto.Name,
+                    Salary = registerDto.Salary,
                 };
                 var createdUser = await _userManager.CreateAsync(appUser, registerDto.Password!);
                 await _userManager.AddToRoleAsync(appUser, registerDto.Role);
@@ -110,7 +112,7 @@ namespace ComputerRepairs.Controllers
                 await _userManager.AddPasswordAsync(user, appUserDto.Password);
             }
             await _dbContext.SaveChangesAsync();
-            return NoContent();
+            return Ok("User Updated");
         }
         [HttpGet("current")]
         public async Task<IActionResult> GetCurrentUser()
@@ -156,7 +158,7 @@ namespace ComputerRepairs.Controllers
 
                 if (!passwordChangeResult.Succeeded)
                 {
-                    return BadRequest($"Error while changing password! {passwordChangeResult.Errors}");
+                    return BadRequest("Error while changing password");
                 }
 
             }
@@ -165,7 +167,7 @@ namespace ComputerRepairs.Controllers
             {
                 return BadRequest($"Failed to update user {result.Errors}");
             }
-            return Ok("User updated successfully");
+            return Ok("Profile Updated");
         }
 
         [HttpDelete("{userId}")]
@@ -199,7 +201,7 @@ namespace ComputerRepairs.Controllers
             }
 
             await _dbContext.SaveChangesAsync();
-            return NoContent();
+            return Ok("User Deleted");
         }
 
         private string? GetCurrentUserId()
