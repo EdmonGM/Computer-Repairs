@@ -50,7 +50,7 @@ namespace ComputerRepairs.Controllers
             var ticketModel = ticketDto.ToTicketFromCreateTicketDto(userId);
             await _context.AddAsync(ticketModel);
             await _context.SaveChangesAsync();
-            return Ok();
+            return Ok("Ticket Created");
         }
 
         [HttpPut("{id:int}")]
@@ -67,7 +67,7 @@ namespace ComputerRepairs.Controllers
             ticket.UpdatedDate = DateTime.Now;
 
             await _context.SaveChangesAsync();
-            return Ok(ticket);
+            return Ok("Ticket Updated");
         }
 
         [HttpDelete("{id:int}")]
@@ -82,7 +82,7 @@ namespace ComputerRepairs.Controllers
             _context.Tickets.Remove(ticket);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Ticket Deleted");
         }
     }
 }
